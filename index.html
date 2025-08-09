@@ -2164,5 +2164,87 @@
             Built for Cape Town's #1 Tech Support!
         `);
     </script>
+
+  <!-- Google Forms Integration Script -->
+  <script>
+    // Google Forms Backend Integration
+    (function() {
+        // Google Form configuration
+        const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScPLUfWvrsugVws454f5uwEnsnzidhLRljbysWFYpfv60ucQw/formResponse';
+        
+        // Entry ID mapping from your Google Form
+        const ENTRY_IDS = {
+            name: 'entry.2005620554',
+            email: 'entry.1045781291', 
+            phone: 'entry.1166974658',
+            message: 'entry.839337160'
+        };
+
+        // Function to submit to Google Forms
+        function submitToGoogleForm(formData) {
+            const googleFormData = new FormData();
+            
+            // Map your form fields to Google Form entries
+            const name = formData.get('name') || '';
+            const phone = formData.get('phone') || '';
+            const service = formData.get('service') || '';
+            const message = formData.get('message') || '';
+            
+            // Create a combined message with service info
+            const fullMessage = service ? `Service: ${service}\n\n${message}`.trim() : message;
+            
+            // Add data to Google Form
+            googleFormData.append(ENTRY_IDS.name, name);
+            googleFormData.append(ENTRY_IDS.email, 'phillimon@pm.me');
+            googleFormData.append(ENTRY_IDS.phone, phone);
+            googleFormData.append(ENTRY_IDS.message, fullMessage);
+            
+            // Submit to Google Form (silent submission)
+            fetch(GOOGLE_FORM_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: googleFormData
+            }).catch(error => {
+                console.log('Background submission completed');
+            });
+        }
+
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('callbackForm');
+            
+            if (!form) {
+                console.error('Form with ID "callbackForm" not found');
+                return;
+            }
+            
+            // Override the form submission
+            form.addEventListener('submit', function(e) {
+                const formData = new FormData(this);
+                
+                // Submit to Google Forms in the background
+                submitToGoogleForm(formData);
+                
+                // Let the original form handling continue
+            }, true);
+        });
+
+        // Test function
+        window.testGoogleFormIntegration = function() {
+            console.log('Testing Google Form integration...');
+            
+            const testData = new FormData();
+            testData.append('service', 'Test Service');
+            testData.append('name', 'Test User');
+            testData.append('phone', '071 000 0000');
+            testData.append('message', 'This is a test submission');
+            
+            submitToGoogleForm(testData);
+            console.log('Test submission sent to Google Forms');
+        };
+
+    })();
+  </script>
+
 </body>
 </html>
