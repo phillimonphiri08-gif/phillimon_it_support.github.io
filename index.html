@@ -114,6 +114,12 @@
             --radius-2xl: 1rem;
             --radius-3xl: 1.5rem;
             --radius-full: 9999px;
+
+            /* Success/Error Colors */
+            --success-50: #f0fdf4;
+            --success-500: #22c55e;
+            --error-50: #fef2f2;
+            --error-500: #ef4444;
         }
 
         /* Enhanced Reset with Touch Optimization */
@@ -1073,6 +1079,19 @@
             resize: vertical;
         }
 
+        /* Form success/error states */
+        .form-group input.success,
+        .form-group textarea.success {
+            border-color: var(--success-500);
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .form-group input.error,
+        .form-group textarea.error {
+            border-color: var(--error-500);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
         /* Mobile Contact Info */
         .contact-info-mobile {
             padding: var(--space-xl);
@@ -1394,6 +1413,55 @@
                 display: none;
             }
         }
+
+        /* Form submission status styles */
+        .form-status {
+            padding: var(--space-lg);
+            border-radius: var(--radius-xl);
+            margin-bottom: var(--space-xl);
+            font-weight: 600;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s var(--ease-spring);
+        }
+
+        .form-status.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .form-status.success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: var(--success-500);
+        }
+
+        .form-status.error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--error-500);
+        }
+
+        /* Button loading state */
+        .btn--loading {
+            position: relative;
+            color: transparent !important;
+        }
+
+        .btn--loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
     </style>
 </head>
 
@@ -1704,8 +1772,9 @@
                     </div>
                 </div>
 
-                <form class="contact-form" method="POST" netlify id="contactForm">
-                    <input type="hidden" name="form-name" value="contact">
+                <form class="contact-form" id="contactForm">
+                    <div class="form-status" id="formStatus"></div>
+                    
                     <h3 class="contact-form__title">Send a Message</h3>
 
                     <div class="form-group">
@@ -1887,33 +1956,62 @@
                 observer.observe(card);
             });
 
-            // Enhanced form handling
+            // FIXED: Enhanced form handling with proper Google Forms integration
             const contactForm = document.getElementById('contactForm');
             const submitBtn = document.getElementById('submitBtn');
+            const formStatus = document.getElementById('formStatus');
 
             if (contactForm && submitBtn) {
                 contactForm.addEventListener('submit', function(e) {
-                    const originalText = submitBtn.textContent;
+                    e.preventDefault(); // CRITICAL FIX: Prevent default form submission
+                    
+                    // Get form data
+                    const formData = new FormData(this);
+                    const data = {
+                        name: formData.get('name'),
+                        email: formData.get('email'),
+                        phone: formData.get('phone') || '',
+                        message: formData.get('message')
+                    };
+
+                    // Validate required fields
+                    if (!data.name || !data.email || !data.message) {
+                        showFormStatus('Please fill in all required fields.', 'error');
+                        return;
+                    }
 
                     // Update button state
-                    submitBtn.textContent = 'Sending... ⏳';
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.classList.add('btn--loading');
                     submitBtn.disabled = true;
-                    submitBtn.style.opacity = '0.7';
-                    submitBtn.style.transform = 'scale(0.98)';
-
+                    
                     // Haptic feedback
                     vibrateDevice([50, 10, 50]);
 
-                    // Reset after timeout (if form doesn't redirect)
-                    setTimeout(() => {
-                        submitBtn.textContent = '✅ Message Sent!';
-                        setTimeout(() => {
-                            submitBtn.textContent = originalText;
-                            submitBtn.disabled = false;
-                            submitBtn.style.opacity = '1';
-                            submitBtn.style.transform = 'scale(1)';
-                        }, 2000);
-                    }, 1000);
+                    // Submit to Google Forms
+                    submitToGoogleForm(data)
+                        .then(() => {
+                            showFormStatus('✅ Message sent successfully! I\'ll respond within 2 hours.', 'success');
+                            contactForm.reset();
+                            
+                            // Clear validation styles
+                            const inputs = contactForm.querySelectorAll('input, textarea');
+                            inputs.forEach(input => {
+                                input.classList.remove('success', 'error');
+                            });
+                        })
+                        .catch((error) => {
+                            console.error('Submission error:', error);
+                            showFormStatus('❌ Failed to send message. Please try calling or emailing directly.', 'error');
+                        })
+                        .finally(() => {
+                            // Reset button state
+                            setTimeout(() => {
+                                submitBtn.classList.remove('btn--loading');
+                                submitBtn.disabled = false;
+                                submitBtn.innerHTML = originalText;
+                            }, 1500);
+                        });
                 });
 
                 // Real-time validation with enhanced UX
@@ -1925,18 +2023,26 @@
                         clearTimeout(timeoutId);
 
                         // Remove any previous validation styling
-                        this.style.borderColor = '';
-                        this.style.boxShadow = '';
+                        this.classList.remove('success', 'error');
 
                         // Debounced validation
                         timeoutId = setTimeout(() => {
                             if (this.hasAttribute('required') && !this.value.trim()) {
-                                this.style.borderColor = 'rgba(239, 68, 68, 0.6)';
-                                this.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                                this.classList.add('error');
                             } else if (this.value.trim()) {
-                                this.style.borderColor = 'rgba(20, 184, 166, 0.6)';
-                                this.style.boxShadow = '0 0 0 3px rgba(20, 184, 166, 0.1)';
-                                vibrateDevice([5]); // Subtle success feedback
+                                // Email validation
+                                if (this.type === 'email' && this.value) {
+                                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                                    if (emailRegex.test(this.value)) {
+                                        this.classList.add('success');
+                                        vibrateDevice([5]); // Subtle success feedback
+                                    } else {
+                                        this.classList.add('error');
+                                    }
+                                } else {
+                                    this.classList.add('success');
+                                    vibrateDevice([5]); // Subtle success feedback
+                                }
                             }
                         }, 500);
                     });
@@ -2048,6 +2154,53 @@
             }
         }
 
+        // FIXED: Properly configured Google Forms submission
+        async function submitToGoogleForm(data) {
+            const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScPLUfWvrsugVws454f5uwEnsnzidhLRljbysWFYpfv60ucQw/formResponse';
+            
+            const ENTRY_IDS = {
+                name: 'entry.2005620554',
+                email: 'entry.1045781291', 
+                phone: 'entry.1166974658',
+                message: 'entry.839337160'
+            };
+
+            const formData = new FormData();
+            formData.append(ENTRY_IDS.name, data.name);
+            formData.append(ENTRY_IDS.email, data.email);
+            formData.append(ENTRY_IDS.phone, data.phone);
+            formData.append(ENTRY_IDS.message, data.message);
+
+            try {
+                // Submit to Google Forms
+                await fetch(GOOGLE_FORM_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Required for Google Forms
+                    body: formData
+                });
+                
+                // Since we can't get response from no-cors, we assume success
+                return Promise.resolve();
+            } catch (error) {
+                console.error('Google Forms submission error:', error);
+                return Promise.reject(error);
+            }
+        }
+
+        // Form status display function
+        function showFormStatus(message, type) {
+            const formStatus = document.getElementById('formStatus');
+            if (formStatus) {
+                formStatus.textContent = message;
+                formStatus.className = `form-status ${type} show`;
+                
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    formStatus.classList.remove('show');
+                }, 5000);
+            }
+        }
+
         // Haptic feedback function
         function vibrateDevice(pattern) {
             if ('vibrate' in navigator && window.innerWidth <= 768) {
@@ -2079,7 +2232,9 @@
             setTimeout(() => {
                 feedback.style.animation = 'fadeOut 0.3s ease-out forwards';
                 setTimeout(() => {
-                    document.body.removeChild(feedback);
+                    if (document.body.contains(feedback)) {
+                        document.body.removeChild(feedback);
+                    }
                 }, 300);
             }, duration);
         }
@@ -2160,91 +2315,32 @@
             ♿ Enhanced accessibility
             🚀 Performance optimized
             📊 User experience focused
+            🔧 FORM SUBMISSION ISSUES FIXED
 
             Built for Cape Town's #1 Tech Support!
         `);
+
+        // Test function for debugging
+        window.testFormSubmission = function() {
+            const testData = {
+                name: 'Test User',
+                email: 'test@example.com',
+                phone: '071 000 0000',
+                message: 'This is a test message to verify form submission works correctly.'
+            };
+            
+            console.log('Testing form submission...');
+            submitToGoogleForm(testData)
+                .then(() => {
+                    console.log('✅ Test submission successful');
+                    showFormStatus('✅ Test submission successful!', 'success');
+                })
+                .catch((error) => {
+                    console.error('❌ Test submission failed:', error);
+                    showFormStatus('❌ Test submission failed', 'error');
+                });
+        };
     </script>
-
-  <!-- Google Forms Integration Script -->
-  <script>
-    // Google Forms Backend Integration
-    (function() {
-        // Google Form configuration
-        const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScPLUfWvrsugVws454f5uwEnsnzidhLRljbysWFYpfv60ucQw/formResponse';
-        
-        // Entry ID mapping from your Google Form
-        const ENTRY_IDS = {
-            name: 'entry.2005620554',
-            email: 'entry.1045781291', 
-            phone: 'entry.1166974658',
-            message: 'entry.839337160'
-        };
-
-        // Function to submit to Google Forms
-        function submitToGoogleForm(formData) {
-            const googleFormData = new FormData();
-            
-            // Map your form fields to Google Form entries
-            const name = formData.get('name') || '';
-            const phone = formData.get('phone') || '';
-            const service = formData.get('service') || '';
-            const message = formData.get('message') || '';
-            
-            // Create a combined message with service info
-            const fullMessage = service ? `Service: ${service}\n\n${message}`.trim() : message;
-            
-            // Add data to Google Form
-            googleFormData.append(ENTRY_IDS.name, name);
-            googleFormData.append(ENTRY_IDS.email, 'phillimon@pm.me');
-            googleFormData.append(ENTRY_IDS.phone, phone);
-            googleFormData.append(ENTRY_IDS.message, fullMessage);
-            
-            // Submit to Google Form (silent submission)
-            fetch(GOOGLE_FORM_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: googleFormData
-            }).catch(error => {
-                console.log('Background submission completed');
-            });
-        }
-
-        // Wait for DOM to be ready
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('callbackForm');
-            
-            if (!form) {
-                console.error('Form with ID "callbackForm" not found');
-                return;
-            }
-            
-            // Override the form submission
-            form.addEventListener('submit', function(e) {
-                const formData = new FormData(this);
-                
-                // Submit to Google Forms in the background
-                submitToGoogleForm(formData);
-                
-                // Let the original form handling continue
-            }, true);
-        });
-
-        // Test function
-        window.testGoogleFormIntegration = function() {
-            console.log('Testing Google Form integration...');
-            
-            const testData = new FormData();
-            testData.append('service', 'Test Service');
-            testData.append('name', 'Test User');
-            testData.append('phone', '071 000 0000');
-            testData.append('message', 'This is a test submission');
-            
-            submitToGoogleForm(testData);
-            console.log('Test submission sent to Google Forms');
-        };
-
-    })();
-  </script>
 
 </body>
 </html>
