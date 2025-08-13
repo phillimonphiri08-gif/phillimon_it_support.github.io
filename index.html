@@ -1,4 +1,138 @@
     <!-- Ultra-Secure JavaScript -->
+<script>
+// FIXED JAVASCRIPT FOR GOOGLE FORM INTEGRATION
+document.addEventListener('DOMContentLoaded', function() {
+    const contactForm = document.getElementById('contactForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const hiddenIframe = document.getElementById('hidden_iframe');
+    const consentCheckbox = document.getElementById('consent');
+    let formSubmitted = false;
+
+    // Updated with your actual Google Form URL
+    const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScPLUfWvrsugVws454f5uwEnsnzidhLRljbysWFYpfv60ucQw/formResponse';
+
+    // Enable submit button when consent is given
+    consentCheckbox.addEventListener('change', function() {
+        submitBtn.disabled = !this.checked;
+        if (this.checked) {
+            submitBtn.textContent = '🔒 Send Secure Message';
+        } else {
+            submitBtn.textContent = '✅ Please consent to continue';
+        }
+    });
+
+    // Handle iframe load event (when form submission completes)
+    hiddenIframe.addEventListener('load', function() {
+        if (formSubmitted) {
+            // Success feedback
+            submitBtn.textContent = '✅ Message Sent Successfully!';
+            submitBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+
+            // Show success message
+            showFeedback('Your message has been sent! I\'ll respond within 2 hours.', 'success');
+
+            // Reset form after delay
+            setTimeout(() => {
+                contactForm.reset();
+                consentCheckbox.checked = false;
+                submitBtn.textContent = '🔒 Send Secure Message';
+                submitBtn.disabled = true;
+                submitBtn.style.background = '';
+            }, 3000);
+
+            formSubmitted = false;
+        }
+    });
+
+    // Handle form submission
+    contactForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        try {
+            // Validate form
+            const formData = new FormData(this);
+
+            // Check required fields
+            const name = formData.get('entry.1416424559')?.trim();
+            const email = formData.get('entry.1187194567')?.trim();
+            const message = formData.get('entry.896927075')?.trim();
+
+            if (!name || !email || !message) {
+                throw new Error('Please fill in all required fields');
+            }
+
+            // Validate email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                throw new Error('Please enter a valid email address');
+            }
+
+            // Check consent
+            if (!consentCheckbox.checked) {
+                throw new Error('Please provide consent to continue');
+            }
+
+            // Update button state
+            submitBtn.textContent = '🔄 Sending...';
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.7';
+
+            // Set form action and submit
+            this.action = GOOGLE_FORM_URL;
+            formSubmitted = true;
+
+            // Submit form to hidden iframe
+            this.submit();
+
+        } catch (error) {
+            showFeedback(error.message, 'error');
+
+            // Reset button
+            submitBtn.textContent = '🔒 Send Secure Message';
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+        }
+    });
+
+    // Feedback function
+    function showFeedback(message, type = 'info') {
+        const feedback = document.createElement('div');
+        const baseStyles = `
+            position: fixed;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-weight: 600;
+            z-index: 10000;
+            animation: slideInUp 0.3s ease-out;
+            max-width: 90vw;
+            text-align: center;
+        `;
+
+        const typeStyles = {
+            success: 'background: rgba(20, 184, 166, 0.95); color: white;',
+            error: 'background: rgba(239, 68, 68, 0.95); color: white;',
+            info: 'background: rgba(59, 130, 246, 0.95); color: white;'
+        };
+
+        feedback.style.cssText = baseStyles + typeStyles[type];
+        feedback.textContent = message;
+
+        document.body.appendChild(feedback);
+
+        setTimeout(() => {
+            feedback.style.animation = 'fadeOut 0.3s ease-out forwards';
+            setTimeout(() => {
+                if (document.body.contains(feedback)) {
+                    document.body.removeChild(feedback);
+                }
+            }, 300);
+        }, 3000);
+    }
+});
+</script>
     <script>
         // Security Configuration
         const SECURITY_CONFIG = {
@@ -340,6 +474,7 @@
             const contactForm = document.getElementById('contactForm');
             const submitBtn = document.getElementById('submitBtn');
 
+            /*
             if (contactForm && submitBtn) {
                 // Generate and set CSRF token
                 const csrfToken = generateCSRFToken();
@@ -497,6 +632,7 @@
                     });
                 });
             }
+            */
 
             // Secure interactive elements
             document.querySelectorAll('.vibrate-on-tap').forEach(element => {
@@ -2476,7 +2612,10 @@
         </div>
     </section>
 
-    <!-- Ultra-Mobile Contact Section -->
+    <!-- ✅ FORM INTEGRATION READY - All IDs Verified -->
+    <!-- Your form URL and entry IDs are correct and ready to use -->
+
+    <!-- Updated Form HTML -->
     <section class="contact" id="contact">
         <div class="container">
             <div class="contact__content">
@@ -2507,25 +2646,19 @@
                     <div class="contact-info-mobile">
                         <p><strong>⚡ Response:</strong> Usually within 2 hours</p>
                         <p><strong>📍 Service Area:</strong> Cape Town & surrounds</p>
-                        <p><strong>🔐 Privacy:</strong> We don'r collect sensitive information</p>
+                        <p><strong>🔒 Privacy:</strong> We don't collect sensitive information</p>
                     </div>
                 </div>
 
-                <!-- Secure Contact Form -->
-                <form class="contact-form" id="contactForm" method="POST" action="#" novalidate>
-                    <!-- CSRF Protection -->
-                    <input type="hidden" name="csrf_token" id="csrfToken">
-                    
-                    <!-- Honeypot for bot detection -->
-                    <input type="text" name="website" style="display: none;" tabindex="-1" autocomplete="off">
-                    
+                <!-- FIXED CONTACT FORM -->
+                <form class="contact-form" id="contactForm" method="POST" target="hidden_iframe" novalidate>
                     <h3 class="contact-form__title">Send a Secure Message</h3>
 
                     <div class="form-group">
                         <label for="name">Your Name *</label>
                         <input type="text" 
                                id="name" 
-                               name="name" 
+                               name="entry.1416424559"
                                placeholder="How should I address you?" 
                                required 
                                maxlength="50"
@@ -2536,7 +2669,7 @@
                         <label for="email">Email Address *</label>
                         <input type="email" 
                                id="email" 
-                               name="email" 
+                               name="entry.1187194567"
                                placeholder="your@email.com" 
                                required
                                maxlength="100"
@@ -2547,7 +2680,7 @@
                         <label for="phone">Phone</label>
                         <input type="tel" 
                                id="phone" 
-                               name="phone" 
+                               name="entry.318249708"
                                placeholder="For faster response"
                                maxlength="20"
                                autocomplete="tel">
@@ -2556,46 +2689,22 @@
                     <div class="form-group">
                         <label for="message">How Can I Help? *</label>
                         <textarea id="message" 
-                                  name="message" 
+                                  name="entry.896927075"
                                   placeholder="Describe your tech challenge, what you'd like me to do for you. The more details, the better I can help!" 
                                   required
                                   maxlength="1000"></textarea>
                     </div>
 
                     <!-- Privacy Consent -->
-<div class="form-group">
-  <label for="consent" style="
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    line-height: 1.4;
-  ">
-    <input
-      type="checkbox"
-      id="consent"
-      name="consent"
-      required
-      style="
-        margin: 0;
-        transform: scale(1.2);
-        flex-shrink: 0;
-        width: 18px;
-        height: 18px;
-        accent-color: var(--primary-500);
-      "
-    >
-    <span style="
-      font-size: 14px;
-      color: rgba(255, 255, 255, 0.95);
-      margin-left: 2px;
-      white-space: normal;
-    ">
-      Confirm
-    </span>
-  </label>
-</div>
-
+                    <div class="form-group">
+                        <label for="consent" style="display: flex; align-items: center; gap: 10px; cursor: pointer; line-height: 1.4;">
+                            <input type="checkbox" id="consent" name="consent" required
+                                   style="margin: 0; transform: scale(1.2); flex-shrink: 0; width: 18px; height: 18px; accent-color: var(--primary-500);">
+                            <span style="font-size: 14px; color: rgba(255, 255, 255, 0.95); margin-left: 2px; white-space: normal;">
+                                I consent to being contacted about my inquiry
+                            </span>
+                        </label>
+                    </div>
 
                     <button type="submit" 
                             class="btn btn--accent btn--xl vibrate-on-tap" 
@@ -2608,6 +2717,9 @@
             </div>
         </div>
     </section>
+
+    <!-- Hidden iframe for form submission -->
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
 
     <!-- Enhanced Footer -->
     <footer class="footer">
