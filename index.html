@@ -362,13 +362,13 @@
                     if (submitted) {
                         submitBtn.textContent = '✅ Message Sent Securely!';
                         submitBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-
+                        
                         showSecureFeedback('Your message has been sent securely! I\'ll respond within 2 hours.', 'success', 5000);
-
-                        logSecurityEvent('form_submitted', {
+                        
+                        logSecurityEvent('form_submitted', { 
                             timestamp: new Date().toISOString()
                         });
-
+                        
                         setTimeout(() => {
                             contactForm.reset();
                             document.getElementById('csrfToken').value = generateCSRFToken();
@@ -409,7 +409,7 @@
                         this.action = 'https://docs.google.com/forms/d/e/1FAIpQLScPLUfWvrsugVws454f5uwEnsnzidhLRljbysWFYpfv60ucQw/formResponse';
                         this.target = 'hidden_iframe';
                         submitted = true;
-
+                        
                         // The form will now submit to the iframe without preventing default
 
                     } catch (error) {
@@ -2515,7 +2515,7 @@
                         <label for="name">Your Name *</label>
                         <input type="text" 
                                id="name" 
-                               name="entry.1416424559"
+                               name="entry.1416424559" 
                                placeholder="How should I address you?" 
                                required 
                                maxlength="50"
@@ -2526,7 +2526,7 @@
                         <label for="email">Email Address *</label>
                         <input type="email" 
                                id="email" 
-                               name="entry.1187194567"
+                               name="entry.1187194567" 
                                placeholder="your@email.com" 
                                required
                                maxlength="100"
@@ -2537,7 +2537,7 @@
                         <label for="phone">Phone</label>
                         <input type="tel" 
                                id="phone" 
-                               name="entry.318249708"
+                               name="entry.318249708" 
                                placeholder="For faster response"
                                maxlength="20"
                                autocomplete="tel">
@@ -2546,7 +2546,7 @@
                     <div class="form-group">
                         <label for="message">How Can I Help? *</label>
                         <textarea id="message" 
-                                  name="entry.896927075"
+                                  name="entry.896927075" 
                                   placeholder="Describe your tech challenge, what you'd like me to do for you. The more details, the better I can help!" 
                                   required
                                   maxlength="1000"></textarea>
