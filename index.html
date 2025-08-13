@@ -339,8 +339,10 @@
             // Secure form handling
             const contactForm = document.getElementById('contactForm');
             const submitBtn = document.getElementById('submitBtn');
+            const hiddenIframe = document.getElementById('hidden_iframe');
+            let submitted = false;
 
-            if (contactForm && submitBtn) {
+            if (contactForm && submitBtn && hiddenIframe) {
                 // Generate and set CSRF token
                 const csrfToken = generateCSRFToken();
                 document.getElementById('csrfToken').value = csrfToken;
@@ -356,9 +358,33 @@
                     }
                 });
 
+                hiddenIframe.addEventListener('load', function () {
+                    if (submitted) {
+                        submitBtn.textContent = '✅ Message Sent Securely!';
+                        submitBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+
+                        showSecureFeedback('Your message has been sent securely! I\'ll respond within 2 hours.', 'success', 5000);
+
+                        logSecurityEvent('form_submitted', {
+                            timestamp: new Date().toISOString()
+                        });
+
+                        setTimeout(() => {
+                            contactForm.reset();
+                            document.getElementById('csrfToken').value = generateCSRFToken();
+                            consentCheckbox.checked = false;
+                            submitBtn.textContent = '🔒 Send Secure Message';
+                            submitBtn.disabled = true;
+                            submitBtn.style.opacity = '1';
+                            submitBtn.style.transform = 'scale(1)';
+                            submitBtn.style.background = '';
+                        }, 3000);
+
+                        submitted = false; // Reset submitted status
+                    }
+                });
+
                 contactForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
                     try {
                         // Check rate limiting
                         if (!rateLimiter.isAllowed()) {
@@ -379,32 +405,12 @@
                         // Haptic feedback
                         vibrateDevice([50, 10, 50]);
 
-                        // Simulate secure submission (replace with actual endpoint)
-                        setTimeout(() => {
-                            submitBtn.textContent = '✅ Message Sent Securely!';
-                            submitBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-                            
-                            showSecureFeedback('Your message has been sent securely! I\'ll respond within 2 hours.', 'success', 5000);
-                            
-                            // Log successful submission
-                            logSecurityEvent('form_submitted', { 
-                                fields: Object.keys(sanitizedData),
-                                timestamp: new Date().toISOString()
-                            });
-                            
-                            // Reset form after delay
-                            setTimeout(() => {
-                                contactForm.reset();
-                                document.getElementById('csrfToken').value = generateCSRFToken();
-                                consentCheckbox.checked = false;
-                                submitBtn.textContent = originalText;
-                                submitBtn.disabled = true;
-                                submitBtn.style.opacity = '1';
-                                submitBtn.style.transform = 'scale(1)';
-                                submitBtn.style.background = '';
-                            }, 3000);
-                            
-                        }, 1500);
+                        // Set form attributes for submission to Google Forms
+                        this.action = 'https://docs.google.com/forms/d/e/1FAIpQLScPLUfWvrsugVws454f5uwEnsnzidhLRljbysWFYpfv60ucQw/formResponse';
+                        this.target = 'hidden_iframe';
+                        submitted = true;
+
+                        // The form will now submit to the iframe without preventing default
 
                     } catch (error) {
                         logSecurityEvent('form_error', { 
@@ -451,18 +457,18 @@
 
                             let isValid = false;
                             
-                            if (this.name === 'email') {
+                            if (this.name === 'entry.1187194567') { // email
                                 isValid = validateEmail(value);
-                            } else if (this.name === 'phone') {
+                            } else if (this.name === 'entry.318249708') { // phone
                                 isValid = validatePhone(value);
-                            } else if (this.name === 'name') {
+                            } else if (this.name === 'entry.1416424559') { // name
                                 isValid = validateInput(value, SECURITY_CONFIG.maxInputLength.name);
-                            } else if (this.name === 'message') {
+                            } else if (this.name === 'entry.896927075') { // message
                                 isValid = validateInput(value, SECURITY_CONFIG.maxInputLength.message);
                             }
 
                             if (this.hasAttribute('required') && !value.trim()) {
-                                this.style.borderColor = 'rgba(239, 68, 68, 0.6)';
+                                this.style.borderColor = 'rgba(239, 68, 68,.6)';
                                 this.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
                             } else if (value.trim() && isValid) {
                                 this.style.borderColor = 'rgba(20, 184, 166, 0.6)';
@@ -764,6 +770,7 @@
             });
         }
     </script>
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
 </body>
 </html><!doctype html>
 <html lang="en">
@@ -2525,7 +2532,7 @@
                         <label for="name">Your Name *</label>
                         <input type="text" 
                                id="name" 
-                               name="name" 
+                               name="entry.1416424559"
                                placeholder="How should I address you?" 
                                required 
                                maxlength="50"
@@ -2536,7 +2543,7 @@
                         <label for="email">Email Address *</label>
                         <input type="email" 
                                id="email" 
-                               name="email" 
+                               name="entry.1187194567"
                                placeholder="your@email.com" 
                                required
                                maxlength="100"
@@ -2547,7 +2554,7 @@
                         <label for="phone">Phone</label>
                         <input type="tel" 
                                id="phone" 
-                               name="phone" 
+                               name="entry.318249708"
                                placeholder="For faster response"
                                maxlength="20"
                                autocomplete="tel">
@@ -2556,7 +2563,7 @@
                     <div class="form-group">
                         <label for="message">How Can I Help? *</label>
                         <textarea id="message" 
-                                  name="message" 
+                                  name="entry.896927075"
                                   placeholder="Describe your tech challenge, what you'd like me to do for you. The more details, the better I can help!" 
                                   required
                                   maxlength="1000"></textarea>
