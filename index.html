@@ -772,11 +772,7 @@
     </script>
     <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
 </body>
-</html><!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Phil's IT Support – Cape Town | Award-Winning Tech Support</title>
+</html>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="description" content="Cape Town's trusted tech support. Beautiful,Clear help for phones, tablets, and computers. No jargon—just patient guidance.">
     <meta name="theme-color" content="#14b8a6">
@@ -1139,9 +1135,31 @@
         }
 
         .nav__contact {
-            display: flex;
+            display: flex; /* This was missing */
+            position: fixed;
+            top: 0; /* Align to top */
+            left: 0;
+            right: 0;
+            background: rgba(250, 250, 249, 0.98);
+            backdrop-filter: blur(20px);
+            flex-direction: column;
+            padding: var(--space-5xl) var(--space-xl); /* More vertical padding */
+            gap: var(--space-xl);
+            transform: translateY(-100%);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s var(--ease-spring);
+            z-index: 999;
+            height: 100vh;
+            height: 100svh; /* Use svh for better mobile viewport handling */
+            justify-content: center;
             align-items: center;
-            gap: var(--space-md);
+        }
+
+        .nav__contact.active {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
         }
 
         .nav__phone {
@@ -1171,7 +1189,7 @@
 
         /* Mobile Menu Toggle */
         .nav__toggle {
-            display: none;
+            display: block;
             width: var(--touch-target);
             height: var(--touch-target);
             background: none;
@@ -1984,40 +2002,6 @@
 
         /* Mobile Navigation Styles */
         @media (max-width: 768px) {
-            .nav__toggle {
-                display: block;
-            }
-
-            .nav__contact {
-                position: fixed;
-                top: 72px;
-                left: 0;
-                right: 0;
-                background: rgba(250, 250, 249, 0.95);
-                backdrop-filter: blur(20px);
-                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-                flex-direction: column;
-                padding: var(--space-xl);
-                gap: var(--space-lg);
-                transform: translateY(-100%);
-                opacity: 0;
-                visibility: hidden;
-                transition: all 0.3s var(--ease-spring);
-                z-index: 999;
-            }
-
-            .nav__contact.active {
-                transform: translateY(0);
-                opacity: 1;
-                visibility: visible;
-            }
-
-            .nav__phone {
-                width: 100%;
-                justify-content: center;
-                font-size: var(--text-lg);
-                min-height: var(--touch-target-lg);
-            }
 
             .hero {
                 padding: var(--space-3xl) 0 var(--space-2xl);
@@ -2243,10 +2227,9 @@
             </button>
 
             <div class="nav__contact" id="navContact">
-                <a href="tel:+27712040708" class="nav__phone vibrate-on-tap">
-                    📞 071 204 0708
-                </a>
-                <a href="#contact" class="btn btn--primary vibrate-on-tap">Get Help Now</a>
+                <a href="#services" class="btn btn--accent vibrate-on-tap">home🏡</a>
+                <a href="#services" class="btn btn--accent vibrate-on-tap">services</a>
+                <a href="#trust" class="btn btn--accent vibrate-on-tap">about us</a>
             </div>
         </nav>
     </header>
